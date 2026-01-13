@@ -3,70 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>손글씨 연습장 - 글꼴 및 영역 제한 최적화</title>
+    <title>손글씨 연습장 - 최종 보정본</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Gothic+Coding&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gaegu&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Gothic+Coding&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Gaegu&family=Noto+Sans+KR&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: 'Nanum Gothic', sans-serif;
-            overflow: hidden;
-        }
-        #canvas-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            background-color: #f9fafb;
-            -webkit-overflow-scrolling: touch;
-        }
-        canvas {
-            display: block;
-            touch-action: none;
-            background-color: transparent;
-        }
-        .grid-layer {
-            position: absolute;
-            top: 0; left: 0;
-            pointer-events: none;
-            user-select: none;
-        }
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); z-index: 100; justify-content: center; align-items: center;
-        }
-        #resultToast {
-            position: fixed; bottom: 20px; right: 20px; padding: 1rem 2rem;
-            background: #1f2937; color: white; border-radius: 0.5rem;
-            display: none; z-index: 50;
-        }
-        footer {
-            background: rgba(255, 255, 255, 0.8); border-top: 1px solid #e5e7eb; padding: 0.5rem;
-            text-align: center; font-size: 0.75rem; color: #6b7280;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+        #canvas-container { position: relative; width: 100%; height: 100%; overflow: auto; background-color: #f9fafb; -webkit-overflow-scrolling: touch; }
+        canvas { display: block; touch-action: none; background-color: transparent; }
+        .grid-layer { position: absolute; top: 0; left: 0; pointer-events: none; user-select: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 100; justify-content: center; align-items: center; }
+        #resultToast { position: fixed; bottom: 20px; right: 20px; padding: 1rem 2rem; background: #1f2937; color: white; border-radius: 0.5rem; display: none; z-index: 50; }
+        .loading-spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        footer { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); border-top: 1px solid #e5e7eb; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: #6b7280; z-index: 40; }
     </style>
 </head>
-<body class="bg-gray-100 flex flex-col md:flex-row">
+<body class="bg-gray-100 flex flex-col md:flex-row pb-8">
 
-    <aside class="w-full md:w-1/5 bg-white shadow-xl p-6 z-10 flex flex-col gap-5 overflow-y-auto border-r border-gray-200 h-screen">
+    <aside class="w-full md:w-1/5 bg-white shadow-xl p-6 z-10 flex flex-col gap-5 overflow-y-auto border-r border-gray-200">
         <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <span class="text-2xl">🖋️</span> 손글씨 연습장
+            <span class="text-2xl">🖋️</span> 손글씨 누적기록 연습장
         </h1>
         
         <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-600">연습할 문장</label>
-            <textarea id="inputText" class="w-full p-3 border border-gray-300 rounded-lg outline-none resize-none" rows="3">정보 및 인공지능기초 교과학습을 위한 손글씨 쓰기.</textarea>
+            <textarea id="inputText" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="3">정보 및 인공지능기초 교과학습을 위한 손글씨 쓰기.</textarea>
         </div>
 
         <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-600">글꼴 선택</label>
             <select id="fontSelect" class="w-full p-2 border border-gray-300 rounded-lg outline-none">
-                <option value="'Nanum Gothic', sans-serif">돋움</option>
-                <option value="'Nanum Gothic Coding', monospace">굴림</option>
-                <option value="'Nanum Pen Script', cursive">필기체</option>
-                <option value="'Nanum Myeongjo', serif">궁서체</option>
-                <option value="'Gaegu', cursive">대나무</option>
+                <option value="'Nanum Gothic'">돋움</option>
+                <option value="'Nanum Gothic Coding'">굴림</option>
+                <option value="'Nanum Pen Script'">필기체</option>
+                <option value="'Nanum Myeongjo'">궁서체</option>
+                <option value="'Gaegu'">대나무</option>
             </select>
         </div>
 
@@ -79,11 +50,11 @@
         </div>
 
         <div class="mt-4 flex flex-col gap-2">
-            <button id="analyzeBtn" class="w-full py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg">🎯 판정 및 결과 기록</button>
+            <button id="analyzeBtn" class="w-full py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg transform active:scale-95">🎯 판정 및 결과 기록</button>
             <div class="grid grid-cols-3 gap-2">
-                <button id="undoBtn" class="py-2 bg-amber-50 text-amber-600 font-semibold rounded-lg border border-amber-200 text-xs text-center">되돌리기</button>
-                <button id="clearBtn" class="py-2 bg-gray-100 text-gray-600 font-semibold rounded-lg text-xs text-center">지우기</button>
-                <button id="downloadBtn" class="py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg text-xs text-center">저장</button>
+                <button id="undoBtn" class="py-2 bg-amber-50 text-amber-600 font-semibold rounded-lg border border-amber-200 text-xs">되돌리기</button>
+                <button id="clearBtn" class="py-2 bg-gray-100 text-gray-600 font-semibold rounded-lg hover:bg-gray-200 text-xs">지우기</button>
+                <button id="downloadBtn" class="py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 text-xs">저장</button>
             </div>
         </div>
 
@@ -93,30 +64,36 @@
         </div>
     </aside>
 
-    <main class="flex-grow relative overflow-hidden h-screen flex flex-col">
+    <main class="flex-grow relative overflow-hidden">
         <div id="canvas-container">
             <canvas id="guideCanvas" class="grid-layer"></canvas>
             <canvas id="paintCanvas"></canvas>
         </div>
-        <footer>
-            <p>© 2026. <strong>깐깐쌤</strong> All rights reserved.</p>
-        </footer>
     </main>
 
     <div id="infoModal" class="modal">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 flex flex-col gap-4">
             <h2 class="text-xl font-bold text-gray-800 text-center">연습 결과 기록</h2>
             <p id="modalScoreText" class="text-center text-blue-600 font-bold text-lg mb-2"></p>
-            <input type="text" id="studentId" class="w-full p-3 border border-gray-300 rounded-lg outline-none" placeholder="학번(예: 20101)">
-            <input type="text" id="studentName" class="w-full p-3 border border-gray-300 rounded-lg outline-none" placeholder="이름(예: 홍길동)">
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 ml-1">학번</label>
+                <input type="text" id="studentId" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 20101">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 ml-1">이름</label>
+                <input type="text" id="studentName" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 홍길동">
+            </div>
             <div class="flex gap-2 mt-4">
                 <button id="cancelModal" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-lg">취소</button>
-                <button id="submitInfo" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md">
+                <button id="submitInfo" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">
                     <span id="btnText">시트에 기록하기</span>
                 </button>
             </div>
         </div>
     </div>
+
+    <div id="resultToast">처리 중...</div>
+    <footer><p>© 2024. <strong>깐깐쌤</strong> All rights reserved.</p></footer>
 
     <script>
         const scriptURL = "https://script.google.com/macros/s/AKfycbzClrwGAApEdUwU3hxIrKhOOTXtVZo0jBRuiW4OJ4mm4q-b1hWt8EM_M989wq_KF0dT/exec";
@@ -125,7 +102,6 @@
         const guideCanvas = document.getElementById('guideCanvas');
         const gCtx = guideCanvas.getContext('2d');
         const container = document.getElementById('canvas-container');
-        
         const inputText = document.getElementById('inputText');
         const fontSelect = document.getElementById('fontSelect');
         const strokeRange = document.getElementById('strokeRange');
@@ -133,13 +109,15 @@
         const clearBtn = document.getElementById('clearBtn');
         const undoBtn = document.getElementById('undoBtn');
         const analyzeBtn = document.getElementById('analyzeBtn');
+        const infoModal = document.getElementById('infoModal');
+        const submitInfo = document.getElementById('submitInfo');
 
         let isDrawing = false;
         let lastX = 0, lastY = 0;
         let currentAccuracy = 0;
         const cellSize = 140, padding = 30, lineSpacing = 40;
-        
         let history = [];
+
         function saveHistory() {
             if (history.length > 20) history.shift();
             history.push(canvas.toDataURL());
@@ -149,49 +127,37 @@
             if (history.length === 0) return;
             let img = new Image();
             img.src = history.pop();
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-            };
-        }
-
-        function getCharsPerLine() {
-            const containerWidth = container.clientWidth - (padding * 2);
-            return Math.max(1, Math.floor(containerWidth / cellSize));
+            img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); };
         }
 
         function isInsideWriteArea(x, y) {
             const text = inputText.value.replace(/\n/g, "");
-            const charsPerLine = getCharsPerLine();
+            const containerWidth = container.clientWidth - (padding * 2);
+            const charsPerLine = Math.max(1, Math.floor(containerWidth / cellSize));
             for (let i = 0; i < text.length; i++) {
                 const lineIndex = Math.floor(i / charsPerLine);
                 const charIndexInLine = i % charsPerLine;
                 const rectX = padding + (charIndexInLine * cellSize);
                 const rectY = padding + (lineIndex * ((cellSize * 2) + lineSpacing)) + cellSize; 
-                
-                if (x >= rectX && x <= rectX + cellSize && y >= rectY && y <= rectY + cellSize) {
-                    return true;
-                }
+                if (x >= rectX && x <= rectX + cellSize && y >= rectY && y <= rectY + cellSize) return true;
             }
             return false;
         }
 
         function initCanvas() {
-            const charsPerLine = getCharsPerLine();
+            const containerWidth = container.clientWidth - (padding * 2);
+            const charsPerLine = Math.max(1, Math.floor(containerWidth / cellSize));
             const text = inputText.value.replace(/\n/g, "");
             const totalLines = Math.ceil(text.length / charsPerLine);
             const unitHeight = (cellSize * 2) + lineSpacing;
-            const width = container.clientWidth;
-            const height = Math.max(container.clientHeight, (unitHeight * totalLines) + (padding * 2));
-            
             const temp = canvas.toDataURL();
-            canvas.width = width; canvas.height = height;
-            guideCanvas.width = width; guideCanvas.height = height;
-            
+            canvas.width = container.clientWidth;
+            canvas.height = Math.max(container.clientHeight, (unitHeight * totalLines) + (padding * 2));
+            guideCanvas.width = canvas.width;
+            guideCanvas.height = canvas.height;
             drawGuides(charsPerLine);
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            let img = new Image();
-            img.src = temp;
+            let img = new Image(); img.src = temp;
             img.onload = () => ctx.drawImage(img, 0, 0);
         }
 
@@ -205,13 +171,16 @@
                 const x = padding + (charIndexInLine * cellSize);
                 const yOffset = padding + (lineIndex * ((cellSize * 2) + lineSpacing));
                 
-                gCtx.strokeStyle = '#d1d5db'; gCtx.setLineDash([]); gCtx.strokeRect(x, yOffset, cellSize, cellSize);
+                gCtx.strokeStyle = '#d1d5db'; gCtx.setLineDash([]); 
+                gCtx.strokeRect(x, yOffset, cellSize, cellSize);
                 gCtx.strokeRect(x, yOffset + cellSize, cellSize, cellSize);
                 
                 gCtx.beginPath(); gCtx.setLineDash([3, 3]); gCtx.strokeStyle = '#e5e7eb';
-                const step = cellSize / 2;
-                gCtx.moveTo(x + step, yOffset + cellSize); gCtx.lineTo(x + step, yOffset + (cellSize * 2));
-                gCtx.moveTo(x, yOffset + cellSize + step); gCtx.lineTo(x + cellSize, yOffset + cellSize + step);
+                const step = cellSize / 4;
+                for (let j = 1; j < 4; j++) {
+                    gCtx.moveTo(x + (j * step), yOffset + cellSize); gCtx.lineTo(x + (j * step), yOffset + (cellSize * 2));
+                    gCtx.moveTo(x, yOffset + cellSize + (j * step)); gCtx.lineTo(x + cellSize, yOffset + cellSize + (j * step));
+                }
                 gCtx.stroke();
 
                 gCtx.textAlign = 'center'; gCtx.textBaseline = 'middle';
@@ -228,45 +197,28 @@
             return { x: clientX - rect.left, y: clientY - rect.top };
         }
 
-        function startDrawing(e) {
-            if (e.touches && e.touches.length > 1) return;
+        canvas.addEventListener('touchstart', (e) => {
             const p = getPos(e);
-            if (isInsideWriteArea(p.x, p.y)) {
-                isDrawing = true;
-                saveHistory();
-                [lastX, lastY] = [p.x, p.y];
-            }
-        }
-
-        function drawing(e) {
+            if (isInsideWriteArea(p.x, p.y)) { e.preventDefault(); isDrawing = true; saveHistory(); [lastX, lastY] = [p.x, p.y]; }
+        }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
             if (!isDrawing) return;
             const p = getPos(e);
-            if (isInsideWriteArea(p.x, p.y)) {
-                e.preventDefault(); 
-                ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y);
-                ctx.strokeStyle = customColor.value; ctx.lineWidth = strokeRange.value; ctx.stroke();
-                [lastX, lastY] = [p.x, p.y];
-            } else {
-                isDrawing = false;
-            }
-        }
-
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', drawing);
-        window.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('touchstart', startDrawing, { passive: false });
-        canvas.addEventListener('touchmove', drawing, { passive: false });
+            if (isInsideWriteArea(p.x, p.y)) { e.preventDefault(); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.strokeStyle = customColor.value; ctx.lineWidth = strokeRange.value; ctx.stroke(); [lastX, lastY] = [p.x, p.y]; }
+            else { isDrawing = false; }
+        }, { passive: false });
         canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mousedown', (e) => { const p = getPos(e); if (isInsideWriteArea(p.x, p.y)) { isDrawing = true; saveHistory(); [lastX, lastY] = [p.x, p.y]; } });
+        canvas.addEventListener('mousemove', (e) => { if (!isDrawing) return; const p = getPos(e); if (isInsideWriteArea(p.x, p.y)) { ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.strokeStyle = customColor.value; ctx.lineWidth = strokeRange.value; ctx.stroke(); [lastX, lastY] = [p.x, p.y]; } else { isDrawing = false; } });
+        window.addEventListener('mouseup', () => isDrawing = false);
 
-        // 분석 및 기록 (기존 유지)
-        function analyzeHandwriting() {
+        analyzeBtn.onclick = () => {
             const originalText = inputText.value; if (!originalText.trim()) return;
-            const charsPerLine = getCharsPerLine();
+            const containerWidth = container.clientWidth - (padding * 2);
+            const charsPerLine = Math.max(1, Math.floor(containerWidth / cellSize));
             const font = fontSelect.value;
-            const offCanvas = document.createElement('canvas');
-            offCanvas.width = canvas.width; offCanvas.height = canvas.height;
-            const oCtx = offCanvas.getContext('2d');
-            oCtx.font = `${cellSize * 0.65}px ${font}`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle';
+            const offCanvas = document.createElement('canvas'); offCanvas.width = canvas.width; offCanvas.height = canvas.height;
+            const oCtx = offCanvas.getContext('2d'); oCtx.font = `${cellSize * 0.65}px ${font}`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle';
             let totalMatchScore = 0, validChars = 0;
             for (let i = 0; i < originalText.length; i++) {
                 const char = originalText[i]; if (char.trim().length === 0) continue;
@@ -276,36 +228,30 @@
                 const answerData = oCtx.getImageData(x, y, cellSize, cellSize).data;
                 const userData = ctx.getImageData(x, y, cellSize, cellSize).data;
                 let match = 0, answerPixels = 0, userPixels = 0;
-                for (let j = 3; j < answerData.length; j += 4) {
-                    if (answerData[j] > 20) answerPixels++;
-                    if (userData[j] > 20) userPixels++;
-                    if (answerData[j] > 20 && userData[j] > 20) match++;
-                }
+                for (let j = 3; j < answerData.length; j += 4) { if (answerData[j] > 20) answerPixels++; if (userData[j] > 20) userPixels++; if (answerData[j] > 20 && userData[j] > 20) match++; }
                 if (userPixels > 10) { totalMatchScore += Math.min((match / answerPixels) * 100, 100); validChars++; }
             }
             currentAccuracy = validChars > 0 ? Math.round(totalMatchScore / validChars) : 0;
             document.getElementById('percentVal').textContent = currentAccuracy + '%';
             document.getElementById('scoreDisplay').classList.remove('hidden');
             document.getElementById('modalScoreText').textContent = `평균 정확도: ${currentAccuracy}%`;
-            document.getElementById('infoModal').style.display = 'flex';
-        }
+            infoModal.style.display = 'flex';
+        };
 
-        document.getElementById('submitInfo').onclick = async () => {
+        submitInfo.onclick = async () => {
             const sid = document.getElementById('studentId').value.trim();
             const sname = document.getElementById('studentName').value.trim();
             if (!sid || !sname) { alert("학번과 이름을 입력해주세요."); return; }
-            const btnText = document.getElementById('btnText');
-            btnText.innerHTML = '기록 중...';
+            const btnText = document.getElementById('btnText'); btnText.innerHTML = '<span class="loading-spinner"></span>기록 중...';
             try {
                 await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ studentId: sid, name: sname, text: inputText.value, accuracy: currentAccuracy }) });
-                alert("기록되었습니다!");
-                document.getElementById('infoModal').style.display = 'none';
+                alert("기록되었습니다!"); infoModal.style.display = 'none';
             } catch (e) { alert("오류 발생"); }
             btnText.innerText = '시트에 기록하기';
         };
 
-        document.getElementById('cancelModal').onclick = () => document.getElementById('infoModal').style.display = 'none';
-        clearBtn.onclick = () => { if(confirm("초기화?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); history = []; } };
+        document.getElementById('cancelModal').onclick = () => infoModal.style.display = 'none';
+        clearBtn.onclick = () => { if(confirm("초기화?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); history = []; document.getElementById('scoreDisplay').classList.add('hidden'); } };
         undoBtn.onclick = undo;
         inputText.oninput = initCanvas;
         fontSelect.onchange = initCanvas;
@@ -314,4 +260,3 @@
     </script>
 </body>
 </html>
-
