@@ -2,438 +2,342 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>손글씨 연습장 - 스크롤 및 되돌리기 추가</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>손글씨 연습장 - 시트 구조 최적화</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Noto+Sans+KR&family=Gaegu&family=Gowun+Batang&family=Poor+Story&display=swap" rel="stylesheet">
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
+            margin: 0; padding: 0; height: 100%;
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f3f4f6;
         }
-        /* 레이아웃 수정: 전체 높이를 채우도록 설정 */
-        .app-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        @media (min-width: 768px) {
-            .app-wrapper { flex-direction: row; }
-        }
-        
+        /* [수정] 전체 레이아웃 스크롤 구조 변경 */
         #canvas-container {
             position: relative;
-            flex-grow: 1;
+            width: 100%;
+            height: 100%;
             overflow-y: auto; /* 상하 스크롤 허용 */
             overflow-x: hidden;
             background-color: #f9fafb;
             -webkit-overflow-scrolling: touch;
         }
-        
         canvas {
             display: block;
-            touch-action: none; /* 드로잉 시 브라우저 기본 스크롤 방해 금지 (JS에서 제어) */
+            touch-action: none; /* JS에서 섬세하게 제어 */
             background-color: transparent;
         }
         .grid-layer {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             pointer-events: none;
             user-select: none;
         }
         .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 100; justify-content: center; align-items: center;
         }
         #resultToast {
-            position: fixed;
-            bottom: 60px;
-            right: 20px;
-            padding: 1rem 2rem;
-            background: #1f2937;
-            color: white;
-            border-radius: 0.5rem;
-            display: none;
-            z-index: 50;
+            position: fixed; bottom: 20px; right: 20px; padding: 1rem 2rem;
+            background: #1f2937; color: white; border-radius: 0.5rem;
+            display: none; z-index: 50; animation: slideIn 0.3s ease-out;
         }
+        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .loading-spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 3px solid #fff;
-            width: 20px; height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
+            border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff;
+            width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block;
+            margin-right: 8px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         footer {
-            background: rgba(255, 255, 255, 0.9);
-            border-top: 1px solid #e5e7eb;
-            padding: 0.5rem;
-            text-align: center;
-            font-size: 0.75rem;
-            color: #6b7280;
-            z-index: 40;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px);
+            border-top: 1px solid #e5e7eb; padding: 0.5rem; text-align: center;
+            font-size: 0.75rem; color: #6b7280;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 flex flex-col md:flex-row">
 
-<div class="app-wrapper">
-    <aside class="w-full md:w-1/4 lg:w-1/5 bg-white shadow-xl p-6 z-20 flex flex-col gap-4 overflow-y-auto border-r border-gray-200">
+    <aside class="w-full md:w-1/5 bg-white shadow-xl p-6 z-10 flex flex-col gap-5 overflow-y-auto border-r border-gray-200 h-screen">
         <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <span class="text-2xl">🖋️</span> 손글씨 기록장
+            <span class="text-2xl">🖋️</span> 손글씨 누적기록 연습장
         </h1>
         
-        <div class="flex flex-col gap-1">
-            <label class="text-xs font-bold text-gray-500">연습할 문장</label>
-            <textarea id="inputText" class="w-full p-2 border border-gray-300 rounded-lg text-sm outline-none resize-none" rows="2">정보 및 인공지능기초 교과학습을 위한 손글씨 쓰기.</textarea>
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-600">연습할 문장</label>
+            <textarea id="inputText" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="3">정보 및 인공지능기초 교과학습을 위한 손글씨 쓰기.</textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500">글꼴</label>
-                <select id="fontSelect" class="w-full p-2 border border-gray-300 rounded-lg text-xs outline-none">
-                    <option value="'Noto Sans KR'">본고딕</option>
-                    <option value="'Nanum Myeongjo'">나눔명조</option>
-                    <option value="'Gowun Batang'">고운바탕</option>
-                    <option value="'Nanum Pen Script'">나눔펜</option>
-                    <option value="'Poor Story'">푸어스토리</option>
-                </select>
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-600">글꼴 선택</label>
+            <select id="fontSelect" class="w-full p-2 border border-gray-300 rounded-lg outline-none">
+                <option value="'Noto Sans KR'">본고딕 (정갈함)</option>
+                <option value="'Nanum Myeongjo'">나눔명조 (격식)</option>
+                <option value="'Gowun Batang'">고운바탕 (부드러움)</option>
+                <option value="'Nanum Pen Script'">나눔펜 (손글씨)</option>
+                <option value="'Poor Story'">푸어스토리 (귀여움)</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-600">펜 설정</label>
+            <div class="flex items-center gap-2">
+                <input type="color" id="customColor" class="w-10 h-10 p-0 border-none bg-transparent cursor-pointer" value="#1a56db">
+                <input type="range" id="strokeRange" min="2" max="15" value="6" class="flex-grow accent-blue-600">
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500">펜 색상</label>
-                <input type="color" id="customColor" class="w-full h-9 p-1 border border-gray-300 rounded-lg cursor-pointer" value="#1a56db">
-            </div>
         </div>
 
-        <div class="flex flex-col gap-1">
-            <label class="text-xs font-bold text-gray-500">펜 굵기</label>
-            <input type="range" id="strokeRange" min="2" max="15" value="6" class="w-full accent-blue-600">
-        </div>
-
-        <div class="flex flex-col gap-2 mt-2">
-            <button id="analyzeBtn" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 shadow-md">
+        <div class="mt-4 flex flex-col gap-2">
+            <button id="analyzeBtn" class="w-full py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg transform active:scale-95">
                 🎯 판정 및 결과 기록
             </button>
-            <div class="grid grid-cols-3 gap-1">
-                <button id="undoBtn" class="py-2 bg-amber-50 text-amber-600 text-sm font-bold rounded-lg border border-amber-200 hover:bg-amber-100">↩ 되돌리기</button>
-                <button id="clearBtn" class="py-2 bg-gray-50 text-gray-600 text-sm font-bold rounded-lg border border-gray-200 hover:bg-gray-100">전체삭제</button>
-                <button id="downloadBtn" class="py-2 bg-blue-50 text-blue-600 text-sm font-bold rounded-lg border border-blue-200 hover:bg-blue-100">저장</button>
+            <div class="grid grid-cols-3 gap-2">
+                <button id="undoBtn" class="py-2 bg-amber-50 text-amber-600 font-semibold rounded-lg hover:bg-amber-100 border border-amber-200">되돌리기</button>
+                <button id="clearBtn" class="py-2 bg-gray-100 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">지우기</button>
+                <button id="downloadBtn" class="py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100">저장</button>
             </div>
         </div>
 
-        <div id="scoreDisplay" class="hidden p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-            <p class="text-xs text-blue-600 font-medium">현재 일치율</p>
-            <p id="percentVal" class="text-2xl font-black text-blue-700">0%</p>
+        <div id="scoreDisplay" class="hidden mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl text-center">
+            <p class="text-sm text-blue-600 font-medium">현재 일치율</p>
+            <p id="percentVal" class="text-3xl font-black text-blue-700">0%</p>
         </div>
     </aside>
 
-    <main id="canvas-container">
-        <canvas id="guideCanvas" class="grid-layer"></canvas>
-        <canvas id="paintCanvas"></canvas>
+    <main class="flex-grow relative overflow-hidden h-screen flex flex-col">
+        <div id="canvas-container">
+            <canvas id="guideCanvas" class="grid-layer"></canvas>
+            <canvas id="paintCanvas"></canvas>
+        </div>
+        <footer>
+            <p>© 2024. <strong>깐깐쌤</strong> All rights reserved. 본 프로그램의 무단 전재 및 재배포를 금합니다.</p>
+        </footer>
     </main>
-</div>
 
-<div id="infoModal" class="modal">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 flex flex-col gap-4">
-        <h2 class="text-xl font-bold text-gray-800 text-center">연습 결과 기록</h2>
-        <p id="modalScoreText" class="text-center text-blue-600 font-bold text-lg mb-2"></p>
-        <input type="text" id="studentId" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="학번 (예: 20101)">
-        <input type="text" id="studentName" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="이름 (예: 홍길동)">
-        <div class="flex gap-2 mt-4">
-            <button id="cancelModal" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-lg">취소</button>
-            <button id="submitInfo" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">
-                <span id="btnText">시트에 기록하기</span>
-            </button>
+    <div id="infoModal" class="modal">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 flex flex-col gap-4">
+            <h2 class="text-xl font-bold text-gray-800 text-center">연습 결과 기록</h2>
+            <p id="modalScoreText" class="text-center text-blue-600 font-bold text-lg mb-2"></p>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 ml-1">학번</label>
+                <input type="text" id="studentId" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 20101">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 ml-1">이름</label>
+                <input type="text" id="studentName" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 홍길동">
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button id="cancelModal" class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-lg">취소</button>
+                <button id="submitInfo" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">
+                    <span id="btnText">시트에 기록하기</span>
+                </button>
+            </div>
         </div>
     </div>
-</div>
-<div id="resultToast">처리 중...</div>
+    <div id="resultToast">처리 중...</div>
 
-<footer>
-    <p>© 2024. <strong>깐깐쌤</strong> All rights reserved.</p>
-</footer>
+    <script>
+        const scriptURL = "https://script.google.com/macros/s/AKfycbzClrwGAApEdUwU3hxIrKhOOTXtVZo0jBRuiW4OJ4mm4q-b1hWt8EM_M989wq_KF0dT/exec";
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const guideCanvas = document.getElementById('guideCanvas');
+        const gCtx = guideCanvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
+        
+        const inputText = document.getElementById('inputText');
+        const fontSelect = document.getElementById('fontSelect');
+        const strokeRange = document.getElementById('strokeRange');
+        const customColor = document.getElementById('customColor');
+        const clearBtn = document.getElementById('clearBtn');
+        const undoBtn = document.getElementById('undoBtn'); // 추가
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const infoModal = document.getElementById('infoModal');
+        const submitInfo = document.getElementById('submitInfo');
+        const cancelModal = document.getElementById('cancelModal');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const percentVal = document.getElementById('percentVal');
+        const resultToast = document.getElementById('resultToast');
 
-<script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzClrwGAApEdUwU3hxIrKhOOTXtVZo0jBRuiW4OJ4mm4q-b1hWt8EM_M989wq_KF0dT/exec";
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let currentAccuracy = 0;
+        const cellSize = 140, padding = 30, lineSpacing = 40;
 
-    const canvas = document.getElementById('paintCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const guideCanvas = document.getElementById('guideCanvas');
-    const gCtx = guideCanvas.getContext('2d');
-    const container = document.getElementById('canvas-container');
-    
-    const inputText = document.getElementById('inputText');
-    const fontSelect = document.getElementById('fontSelect');
-    const strokeRange = document.getElementById('strokeRange');
-    const customColor = document.getElementById('customColor');
-    const clearBtn = document.getElementById('clearBtn');
-    const undoBtn = document.getElementById('undoBtn');
-    const analyzeBtn = document.getElementById('analyzeBtn');
+        // [추가] 되돌리기 히스토리 관리
+        let undoList = [];
+        function saveCanvas() {
+            if (undoList.length > 30) undoList.shift();
+            undoList.push(canvas.toDataURL());
+        }
 
-    let isDrawing = false;
-    let lastX = 0, lastY = 0;
-    let currentAccuracy = 0;
-    const cellSize = 140, padding = 30, lineSpacing = 40;
-
-    // 되돌리기를 위한 히스토리 배열
-    let undoHistory = [];
-
-    function saveState() {
-        if (undoHistory.length > 20) undoHistory.shift(); // 메모리 관리: 최대 20획 저장
-        undoHistory.push(canvas.toDataURL());
-    }
-
-    function undo() {
-        if (undoHistory.length > 0) {
-            let lastState = undoHistory.pop();
+        function undo() {
+            if (undoList.length === 0) return;
             let img = new Image();
-            img.src = lastState;
+            img.src = undoList.pop();
             img.onload = () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // 이전 데이터가 있다면 다시 그리기 (실제로는 pop으로 꺼낸 이전 이미지를 복구해야 하므로 구조적 개선 필요)
-                // 단순히 직전 상태를 불러오기 위해 history 관리를 수정합니다.
-                if (undoHistory.length > 0) {
-                    let prevState = new Image();
-                    prevState.src = undoHistory[undoHistory.length - 1];
-                    prevState.onload = () => ctx.drawImage(prevState, 0, 0);
-                }
+                ctx.drawImage(img, 0, 0);
             };
-        } else {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-    }
 
-    function initCanvas() {
-        const containerWidth = container.clientWidth - (padding * 2);
-        const charsPerLine = Math.floor(containerWidth / cellSize);
-        const text = inputText.value.replace(/\n/g, "");
-        const totalLines = Math.ceil(text.length / Math.max(1, charsPerLine));
-        const unitHeight = (cellSize * 2) + lineSpacing;
-        
-        const width = container.clientWidth;
-        const height = Math.max(container.clientHeight, (unitHeight * totalLines) + (padding * 5));
-        
-        // 캔버스 크기 조정 시 기존 내용 소실 방지를 위해 임시 저장
-        const tempImage = canvas.toDataURL();
-        
-        canvas.width = width; 
-        canvas.height = height;
-        guideCanvas.width = width; 
-        guideCanvas.height = height;
-        
-        drawGuides(charsPerLine);
-        ctx.lineCap = 'round'; 
-        ctx.lineJoin = 'round';
-        
-        // 크기 조정 후 기존 그림 복구
-        let img = new Image();
-        img.src = tempImage;
-        img.onload = () => ctx.drawImage(img, 0, 0);
-    }
-
-    function drawGuides(charsPerLine) {
-        gCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
-        const text = inputText.value;
-        const font = fontSelect.value;
-        for (let i = 0; i < text.length; i++) {
-            const lineIndex = Math.floor(i / charsPerLine);
-            const charIndexInLine = i % charsPerLine;
-            const x = padding + (charIndexInLine * cellSize);
-            const yOffset = padding + (lineIndex * ((cellSize * 2) + lineSpacing));
-            drawBox(x, yOffset, text[i], font, true);   
-            drawBox(x, yOffset + cellSize, text[i], font, false); 
+        function showToast(msg) {
+            resultToast.textContent = msg;
+            resultToast.style.display = 'block';
+            setTimeout(() => { resultToast.style.display = 'none'; }, 3000);
         }
-    }
 
-    function drawBox(x, y, char, font, isSource) {
-        gCtx.strokeStyle = '#d1d5db'; gCtx.setLineDash([]); gCtx.strokeRect(x, y, cellSize, cellSize);
-        gCtx.beginPath(); gCtx.setLineDash([3, 3]); gCtx.strokeStyle = '#e5e7eb';
-        for (let i = 1; i < 4; i++) {
-            const step = cellSize / 4;
-            gCtx.moveTo(x + (i * step), y); gCtx.lineTo(x + (i * step), y + cellSize);
-            gCtx.moveTo(x, y + (i * step)); gCtx.lineTo(x + cellSize, y + (i * step));
-        }
-        gCtx.stroke();
-        if (char && char.trim().length > 0) {
-            gCtx.textAlign = 'center'; gCtx.textBaseline = 'middle';
-            gCtx.font = `${cellSize * 0.65}px ${font}`;
-            if (isSource) { gCtx.fillStyle = '#111827'; gCtx.fillText(char, x + cellSize / 2, y + cellSize / 2); } 
-            else { gCtx.fillStyle = 'rgba(0,0,0,0.03)'; gCtx.fillText(char, x + cellSize / 2, y + cellSize / 2); }
-        }
-    }
-
-    // 마우스/터치 좌표 계산 (스크롤 위치 반영)
-    function getPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        // 캔버스의 실제 좌표 = 클라이언트 좌표 - 캔버스 위치 + 컨테이너의 스크롤된 양
-        return { 
-            x: clientX - rect.left, 
-            y: clientY - rect.top
-        };
-    }
-
-    function startDrawing(e) {
-        // 입력 도구가 펜이거나 마우스일 때만 그림 (스크롤 방해 방지)
-        // 만약 손가락으로 드로잉 대신 스크롤을 원한다면 이 로직을 조정해야 합니다.
-        // 현재는 캔버스 영역 위에서의 터치는 무조건 드로잉으로 간주합니다.
-        isDrawing = true;
-        const p = getPos(e);
-        [lastX, lastY] = [p.x, p.y];
-        saveState(); // 획 시작 전 현재 상태 저장
-    }
-
-    function draw(e) {
-        if (!isDrawing) return;
-        const p = getPos(e);
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = customColor.value;
-        ctx.lineWidth = strokeRange.value;
-        ctx.stroke();
-        [lastX, lastY] = [p.x, p.y];
-    }
-
-    function stopDrawing() { isDrawing = false; }
-
-    // 이벤트 리스너
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    window.addEventListener('mouseup', stopDrawing);
-
-    // 터치 이벤트: preventDefault를 통해 드로잉 중 화면이 움직이지 않게 함
-    canvas.addEventListener('touchstart', (e) => {
-        if (e.target === canvas) {
-            e.preventDefault();
-            startDrawing(e);
-        }
-    }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => {
-        if (isDrawing) {
-            e.preventDefault();
-            draw(e);
-        }
-    }, { passive: false });
-    canvas.addEventListener('touchend', stopDrawing);
-
-    undoBtn.onclick = undo;
-    clearBtn.onclick = () => {
-        if(confirm("모든 내용을 지우시겠습니까?")) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            undoHistory = [];
-            document.getElementById('scoreDisplay').classList.add('hidden');
-        }
-    };
-    
-    inputText.addEventListener('input', initCanvas);
-    fontSelect.addEventListener('change', initCanvas);
-    analyzeBtn.onclick = analyzeHandwriting;
-    window.addEventListener('resize', initCanvas);
-    window.onload = initCanvas;
-
-    // 분석 및 모달 제어 (기존 로직 유지)
-    function analyzeHandwriting() {
-        const originalText = inputText.value; if (!originalText.trim()) return;
-        const containerWidth = container.clientWidth - (padding * 2);
-        const charsPerLine = Math.floor(containerWidth / cellSize);
-        const font = fontSelect.value;
-        
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = canvas.width; offCanvas.height = canvas.height;
-        const oCtx = offCanvas.getContext('2d');
-        oCtx.font = `${cellSize * 0.65}px ${font}`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle';
-        
-        let totalMatchScore = 0, validChars = 0;
-        for (let i = 0; i < originalText.length; i++) {
-            const char = originalText[i]; if (!char || char.trim().length === 0) continue;
-            const x = padding + ((i % charsPerLine) * cellSize);
-            const y = padding + (Math.floor(i / charsPerLine) * ((cellSize * 2) + lineSpacing)) + cellSize;
+        function initCanvas() {
+            const containerWidth = container.clientWidth - (padding * 2);
+            const charsPerLine = Math.floor(containerWidth / cellSize);
+            const text = inputText.value.replace(/\n/g, "");
+            const totalLines = Math.ceil(text.length / Math.max(1, charsPerLine));
+            const unitHeight = (cellSize * 2) + lineSpacing;
+            const width = container.clientWidth;
+            const height = Math.max(container.clientHeight, (unitHeight * totalLines) + (padding * 2));
             
-            oCtx.clearRect(x, y, cellSize, cellSize);
-            oCtx.fillText(char, x + cellSize / 2, y + cellSize / 2);
+            // 기존 그림 유지용
+            const temp = canvas.toDataURL();
+            canvas.width = width; canvas.height = height;
+            guideCanvas.width = width; guideCanvas.height = height;
             
-            const answerData = oCtx.getImageData(x, y, cellSize, cellSize).data;
-            const userData = ctx.getImageData(x, y, cellSize, cellSize).data;
+            drawGuides(charsPerLine);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             
-            let match = 0, answerPixels = 0, userPixels = 0;
-            for (let j = 3; j < answerData.length; j += 4) {
-                if (answerData[j] > 20) answerPixels++;
-                if (userData[j] > 20) userPixels++;
-                if (answerData[j] > 20 && userData[j] > 20) match++;
+            let img = new Image();
+            img.src = temp;
+            img.onload = () => ctx.drawImage(img, 0, 0);
+        }
+
+        function drawGuides(charsPerLine) {
+            gCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
+            const text = inputText.value.replace(/\s/g, " ");
+            const font = fontSelect.value;
+            for (let i = 0; i < text.length; i++) {
+                const lineIndex = Math.floor(i / charsPerLine);
+                const charIndexInLine = i % charsPerLine;
+                const x = padding + (charIndexInLine * cellSize);
+                const yOffset = padding + (lineIndex * ((cellSize * 2) + lineSpacing));
+                drawBox(x, yOffset, text[i], font, true);   
+                drawBox(x, yOffset + cellSize, text[i], font, false); 
             }
-            if (userPixels > 10) { totalMatchScore += Math.min((match / answerPixels) * 100, 100); validChars++; }
         }
-        currentAccuracy = validChars > 0 ? Math.round(totalMatchScore / validChars) : 0;
-        document.getElementById('percentVal').textContent = currentAccuracy + '%';
-        document.getElementById('scoreDisplay').classList.remove('hidden');
-        document.getElementById('modalScoreText').textContent = `평균 정확도: ${currentAccuracy}%`;
-        document.getElementById('infoModal').style.display = 'flex';
-    }
 
-    document.getElementById('cancelModal').onclick = () => document.getElementById('infoModal').style.display = 'none';
-    
-    // 저장 기능 (이미지로 저장)
-    document.getElementById('downloadBtn').onclick = () => {
-        const link = document.createElement('a');
-        link.download = 'handwriting.png';
-        // 가이드와 글씨를 합쳐서 저장하기 위해 임시 캔버스 생성
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tCtx = tempCanvas.getContext('2d');
-        tCtx.fillStyle = "#ffffff";
-        tCtx.fillRect(0,0,tempCanvas.width, tempCanvas.height);
-        tCtx.drawImage(guideCanvas, 0, 0);
-        tCtx.drawImage(canvas, 0, 0);
-        link.href = tempCanvas.toDataURL();
-        link.click();
-    };
-
-    // 구글 시트 전송 로직 (기존 유지)
-    document.getElementById('submitInfo').onclick = async () => {
-        const sid = document.getElementById('studentId').value.trim();
-        const sname = document.getElementById('studentName').value.trim();
-        if (!sid || !sname) { alert("학번과 이름을 입력해주세요."); return; }
-        
-        const btn = document.getElementById('submitInfo');
-        const btnText = document.getElementById('btnText');
-        btnText.innerHTML = '<span class="loading-spinner"></span>기록 중...';
-        btn.disabled = true;
-
-        const payload = { studentId: sid, name: sname, text: inputText.value, accuracy: currentAccuracy };
-
-        try {
-            await fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            alert("성공적으로 기록되었습니다!");
-            document.getElementById('infoModal').style.display = 'none';
-        } catch (e) {
-            alert("기록 중 오류가 발생했습니다.");
-        } finally {
-            btnText.innerText = '시트에 기록하기';
-            btn.disabled = false;
+        function drawBox(x, y, char, font, isSource) {
+            gCtx.strokeStyle = '#d1d5db'; gCtx.setLineDash([]); gCtx.strokeRect(x, y, cellSize, cellSize);
+            gCtx.beginPath(); gCtx.setLineDash([3, 3]); gCtx.strokeStyle = '#e5e7eb';
+            const step = cellSize / 4;
+            for (let i = 1; i < 4; i++) {
+                gCtx.moveTo(x + (i * step), y); gCtx.lineTo(x + (i * step), y + cellSize);
+                gCtx.moveTo(x, y + (i * step)); gCtx.lineTo(x + cellSize, y + (i * step));
+            }
+            gCtx.stroke();
+            if (char.trim().length > 0) {
+                gCtx.textAlign = 'center'; gCtx.textBaseline = 'middle';
+                gCtx.font = `${cellSize * 0.65}px ${font}`;
+                if (isSource) { gCtx.fillStyle = '#111827'; gCtx.fillText(char, x + cellSize / 2, y + cellSize / 2); } 
+                else { gCtx.fillStyle = 'rgba(0,0,0,0.03)'; gCtx.fillText(char, x + cellSize / 2, y + cellSize / 2); }
+            }
         }
-    };
-</script>
 
+        // [수정] 스크롤 위치를 고려한 좌표 계산
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startDrawing(e) {
+            // 한 손가락 터치 시에만 그리기 (두 손가락 스크롤 허용)
+            if (e.touches && e.touches.length > 1) return;
+            
+            isDrawing = true;
+            saveCanvas(); // 획 시작 시 저장
+            const p = getPos(e);
+            [lastX, lastY] = [p.x, p.y];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            if (e.touches && e.touches.length > 1) return;
+            
+            e.preventDefault(); // 그리는 동안에는 화면 스크롤 방지
+            const p = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = customColor.value;
+            ctx.lineWidth = strokeRange.value;
+            ctx.stroke();
+            [lastX, lastY] = [p.x, p.y];
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+        // [유지] 기존 분석 및 시트 전송 로직
+        function analyzeHandwriting() {
+            const originalText = inputText.value; if (!originalText.trim()) return;
+            const containerWidth = container.clientWidth - (padding * 2);
+            const charsPerLine = Math.floor(containerWidth / cellSize);
+            const font = fontSelect.value;
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = canvas.width; offCanvas.height = canvas.height;
+            const oCtx = offCanvas.getContext('2d');
+            oCtx.font = `${cellSize * 0.65}px ${font}`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle';
+            let totalMatchScore = 0, validChars = 0;
+            for (let i = 0; i < originalText.length; i++) {
+                const char = originalText[i]; if (char.trim().length === 0) continue;
+                const x = padding + ((i % charsPerLine) * cellSize);
+                const y = padding + (Math.floor(i / charsPerLine) * ((cellSize * 2) + lineSpacing)) + cellSize;
+                oCtx.clearRect(x, y, cellSize, cellSize); oCtx.fillText(char, x + cellSize / 2, y + cellSize / 2);
+                const answerData = oCtx.getImageData(x, y, cellSize, cellSize).data;
+                const userData = ctx.getImageData(x, y, cellSize, cellSize).data;
+                let match = 0, answerPixels = 0, userPixels = 0;
+                for (let j = 3; j < answerData.length; j += 4) {
+                    if (answerData[j] > 20) answerPixels++;
+                    if (userData[j] > 20) userPixels++;
+                    if (answerData[j] > 20 && userData[j] > 20) match++;
+                }
+                if (userPixels > 10) { totalMatchScore += Math.min((match / answerPixels) * 100, 100); validChars++; }
+            }
+            currentAccuracy = validChars > 0 ? Math.round(totalMatchScore / validChars) : 0;
+            percentVal.textContent = currentAccuracy + '%';
+            scoreDisplay.classList.remove('hidden');
+            document.getElementById('modalScoreText').textContent = `평균 정확도: ${currentAccuracy}%`;
+            infoModal.style.display = 'flex';
+        }
+
+        submitInfo.onclick = async () => {
+            const sid = document.getElementById('studentId').value.trim();
+            const sname = document.getElementById('studentName').value.trim();
+            if (!sid || !sname) { alert("학번과 이름을 입력해주세요."); return; }
+            const btnText = document.getElementById('btnText');
+            btnText.innerHTML = '<span class="loading-spinner"></span>기록 중...';
+            submitInfo.disabled = true;
+            const payload = { studentId: sid, name: sname, text: inputText.value, accuracy: currentAccuracy };
+            try {
+                await fetch(scriptURL, { method: 'POST', mode: 'no-cors', cache: 'no-cache', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                showToast("구글 시트(Sheet1)에 기록되었습니다!");
+                setTimeout(() => { infoModal.style.display = 'none'; btnText.innerText = '시트에 기록하기'; submitInfo.disabled = false; }, 1000);
+            } catch (e) {
+                showToast("네트워크 오류 발생");
+                btnText.innerText = '시트에 기록하기'; submitInfo.disabled = false;
+            }
+        };
+
+        cancelModal.onclick = () => infoModal.style.display = 'none';
+        clearBtn.onclick = () => { if(confirm("초기화할까요?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); scoreDisplay.classList.add('hidden'); undoList = []; } };
+        undoBtn.onclick = undo;
+        inputText.addEventListener('input', initCanvas);
+        fontSelect.addEventListener('change', initCanvas);
+        analyzeBtn.onclick = analyzeHandwriting;
+        window.addEventListener('resize', initCanvas);
+        window.onload = initCanvas;
+    </script>
 </body>
 </html>
